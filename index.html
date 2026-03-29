@@ -711,12 +711,11 @@ function capturePoint() {
   sampleCount++;
   const elapsedMin = (sampleCount * intervalSec) / 60;
   const altitude = ascentRate * elapsedMin;
-  const prevAltitude = sampleCount > 1 ? records[records.length - 1].altitude : 0;
-  const altDiff = altitude - prevAltitude;
+  const prevAltitude = ascentRate * ((sampleCount - 1) * intervalSec) / 60;
 
-  // Altitude label
-  const altLow = Math.round(prevAltitude / 100) * 100;
-  const altHigh = Math.round(altitude / 100) * 100;
+  // Altitude label: 0-100m, 100-200m, ...
+  const altLow = Math.round(prevAltitude);
+  const altHigh = Math.round(altitude);
   const altLabel = `${altLow}-${altHigh}m`;
 
   // Calculate horizontal distance using elevation angle
@@ -839,7 +838,7 @@ function updateTable() {
       <td>${r.heading}</td>
       <td>${r.elevation}</td>
       <td>${r.windSpeed}</td>
-      <td><button class="btn-del" onclick="deleteRecord(${i})">✕</button></td>
+      <td><button class="btn-del" onclick="deleteRecord(${i})" title="削除">🗑</button></td>
     `;
     body.appendChild(tr);
   });
