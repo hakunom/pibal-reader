@@ -1,0 +1,1020 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Pi-Bal Tracker | Nom Nom Balloon</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Noto+Sans+JP:wght@400;600;700&display=swap');
+
+  :root {
+    --bg: #0a0e1a;
+    --surface: #111827;
+    --surface2: #1a2236;
+    --border: #2a3550;
+    --text: #e2e8f0;
+    --text-dim: #8892a8;
+    --accent: #38bdf8;
+    --accent2: #818cf8;
+    --green: #34d399;
+    --orange: #fb923c;
+    --red: #f87171;
+    --yellow: #fbbf24;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Noto Sans JP', 'JetBrains Mono', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overscroll-behavior: none;
+  }
+
+  .app {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 12px;
+    padding-bottom: 100px;
+  }
+
+  /* Header */
+  .header {
+    text-align: center;
+    padding: 16px 0 12px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 16px;
+  }
+  .header h1 {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: var(--accent);
+  }
+  .header .sub {
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-top: 4px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* Config Panel */
+  .config {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  .config-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 12px;
+  }
+  .config-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+  .config-row:last-child { margin-bottom: 0; }
+  .config-row label {
+    font-size: 13px;
+    min-width: 110px;
+    color: var(--text-dim);
+  }
+  .config-row input {
+    flex: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 12px;
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    text-align: right;
+  }
+  .config-row input:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+  .config-row .unit {
+    font-size: 12px;
+    color: var(--text-dim);
+    min-width: 36px;
+  }
+
+  /* Sensor Display */
+  .sensor-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  .sensor-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+    text-align: center;
+  }
+  .sensor-item .label {
+    font-size: 10px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+  }
+  .sensor-item .value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--accent);
+  }
+  .sensor-item .value.elev { color: var(--accent2); }
+  .sensor-item .value.alt { color: var(--green); }
+  .sensor-item .suffix {
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+
+  /* Timer */
+  .timer-bar {
+    background: var(--surface2);
+    border-radius: 8px;
+    height: 6px;
+    margin-top: 12px;
+    overflow: hidden;
+  }
+  .timer-bar .fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 8px;
+    transition: width 0.3s ease;
+  }
+  .timer-text {
+    text-align: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-top: 6px;
+  }
+
+  /* Buttons */
+  .controls {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .btn {
+    flex: 1;
+    padding: 14px;
+    border: none;
+    border-radius: 12px;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    letter-spacing: 1px;
+  }
+  .btn:active {
+    transform: scale(0.97);
+  }
+  .btn-record {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #0a0e1a;
+  }
+  .btn-record:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+  .btn-record.recording {
+    background: linear-gradient(135deg, var(--green), #22d3ee);
+    animation: pulse 1.5s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(56, 189, 248, 0.4); }
+    50% { box-shadow: 0 0 0 8px rgba(56, 189, 248, 0); }
+  }
+  .btn-stop {
+    background: var(--surface);
+    border: 1px solid var(--red);
+    color: var(--red);
+    flex: 0.5;
+  }
+  .btn-reset {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    flex: 0.5;
+  }
+  .btn-perm {
+    background: var(--surface);
+    border: 1px solid var(--orange);
+    color: var(--orange);
+  }
+
+  /* Status */
+  .status {
+    text-align: center;
+    font-size: 12px;
+    padding: 8px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .status.ok { background: rgba(52, 211, 153, 0.1); color: var(--green); }
+  .status.warn { background: rgba(251, 146, 60, 0.1); color: var(--orange); }
+  .status.err { background: rgba(248, 113, 113, 0.1); color: var(--red); }
+  .status.info { background: rgba(56, 189, 248, 0.1); color: var(--accent); }
+
+  /* Wind Chart */
+  .chart-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  .chart-section h2 {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 12px;
+  }
+  .chart-container {
+    width: 100%;
+    aspect-ratio: 1;
+  }
+  .chart-container canvas {
+    width: 100%;
+    height: 100%;
+  }
+  .chart-meta {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 8px;
+    font-size: 11px;
+    color: var(--text-dim);
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* Data Table */
+  .table-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+    overflow-x: auto;
+  }
+  .table-section h2 {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 12px;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+  }
+  th {
+    background: var(--surface2);
+    color: var(--text-dim);
+    padding: 8px 6px;
+    text-align: center;
+    font-weight: 600;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+  }
+  td {
+    padding: 7px 6px;
+    text-align: center;
+    border-bottom: 1px solid rgba(42, 53, 80, 0.5);
+    color: var(--text);
+  }
+  tr:last-child td { border-bottom: none; }
+  .table-scroll {
+    max-height: 400px;
+    overflow-y: auto;
+  }
+
+  /* Export */
+  .export-section {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .btn-export {
+    flex: 1;
+    padding: 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    color: var(--text);
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: border-color 0.15s;
+  }
+  .btn-export:hover { border-color: var(--accent); }
+
+  /* Permission overlay */
+  .perm-overlay {
+    position: fixed; inset: 0;
+    background: rgba(10, 14, 26, 0.95);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    padding: 24px;
+  }
+  .perm-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 32px 24px;
+    text-align: center;
+    max-width: 360px;
+  }
+  .perm-card h2 {
+    font-size: 18px;
+    margin-bottom: 12px;
+    color: var(--accent);
+  }
+  .perm-card p {
+    font-size: 13px;
+    color: var(--text-dim);
+    margin-bottom: 20px;
+    line-height: 1.6;
+  }
+  .perm-card .btn {
+    width: 100%;
+    margin-bottom: 10px;
+  }
+  .perm-card .btn:last-child { margin-bottom: 0; }
+
+  .hidden { display: none !important; }
+
+  /* Delete button in table */
+  .btn-del {
+    background: none;
+    border: none;
+    color: var(--red);
+    cursor: pointer;
+    font-size: 14px;
+    opacity: 0.5;
+    padding: 2px 6px;
+  }
+  .btn-del:hover { opacity: 1; }
+</style>
+</head>
+<body>
+
+<!-- Permission Overlay -->
+<div id="permOverlay" class="perm-overlay">
+  <div class="perm-card">
+    <h2>Pi-Bal Tracker</h2>
+    <p>パイロットバルーンの風向風速観測アプリです。<br>
+    スマホの上端をバルーンに向けて方位・仰角を取得します。<br><br>
+    センサーへのアクセス許可が必要です。</p>
+    <button class="btn btn-perm" onclick="requestPermission()">センサーを許可する</button>
+    <button class="btn btn-reset" onclick="skipPermission()">手入力モードで使う</button>
+  </div>
+</div>
+
+<div class="app">
+  <div class="header">
+    <h1>PI-BAL TRACKER</h1>
+    <div class="sub">Nom Nom Balloon — Pilot Balloon Wind Observation</div>
+  </div>
+
+  <!-- Status -->
+  <div id="status" class="status info">センサー未接続</div>
+
+  <!-- Config -->
+  <div class="config">
+    <div class="config-title">観測設定</div>
+    <div class="config-row">
+      <label>上昇速度</label>
+      <input type="number" id="ascentRate" value="200" step="10" min="50" max="500">
+      <span class="unit">m/min</span>
+    </div>
+    <div class="config-row">
+      <label>サンプリング</label>
+      <input type="number" id="interval" value="30" step="5" min="5" max="120">
+      <span class="unit">sec</span>
+    </div>
+    <div class="config-row">
+      <label>観測時刻</label>
+      <input type="time" id="obsTime" style="text-align:left;">
+      <span class="unit"></span>
+    </div>
+  </div>
+
+  <!-- Sensor Display -->
+  <div class="sensor-panel">
+    <div class="sensor-grid">
+      <div class="sensor-item">
+        <div class="label">方位</div>
+        <div class="value" id="headingVal">---</div>
+        <div class="suffix">deg</div>
+      </div>
+      <div class="sensor-item">
+        <div class="label">仰角</div>
+        <div class="value elev" id="elevVal">---</div>
+        <div class="suffix">deg</div>
+      </div>
+      <div class="sensor-item">
+        <div class="label">高度</div>
+        <div class="value alt" id="altVal">---</div>
+        <div class="suffix">m</div>
+      </div>
+    </div>
+    <div class="timer-bar"><div class="fill" id="timerFill" style="width:0%"></div></div>
+    <div class="timer-text" id="timerText">待機中</div>
+  </div>
+
+  <!-- Controls -->
+  <div class="controls">
+    <button class="btn btn-record" id="btnRecord" onclick="toggleRecording()">▶ 観測開始</button>
+    <button class="btn btn-stop hidden" id="btnStop" onclick="stopRecording()">■ 停止</button>
+    <button class="btn btn-reset" id="btnReset" onclick="resetData()">↻</button>
+  </div>
+
+  <!-- Manual input (shown when sensor unavailable) -->
+  <div id="manualInput" class="config hidden">
+    <div class="config-title">手入力</div>
+    <div class="config-row">
+      <label>方位</label>
+      <input type="number" id="manHeading" value="0" step="0.1" min="0" max="360">
+      <span class="unit">deg</span>
+    </div>
+    <div class="config-row">
+      <label>仰角</label>
+      <input type="number" id="manElev" value="45" step="0.1" min="0" max="90">
+      <span class="unit">deg</span>
+    </div>
+    <div style="margin-top:10px">
+      <button class="btn btn-record" onclick="manualCapture()" style="width:100%">📌 記録</button>
+    </div>
+  </div>
+
+  <!-- Wind Chart -->
+  <div class="chart-section">
+    <h2>Wind Chart</h2>
+    <div class="chart-container">
+      <canvas id="windChart"></canvas>
+    </div>
+    <div class="chart-meta">
+      <span id="chartScale">Scale: ---</span>
+      <span id="chartTime"></span>
+    </div>
+  </div>
+
+  <!-- Data Table -->
+  <div class="table-section">
+    <h2>Pi-Bal Data</h2>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>高度</th>
+            <th>方位 (°)</th>
+            <th>仰角 (°)</th>
+            <th>風速 (kt)</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="dataBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Export -->
+  <div class="export-section">
+    <button class="btn-export" onclick="exportCSV()">📄 CSV出力</button>
+    <button class="btn-export" onclick="captureChart()">📸 チャート保存</button>
+  </div>
+</div>
+
+<script>
+// ===== State =====
+let sensorAvailable = false;
+let manualMode = false;
+let isRecording = false;
+let currentHeading = null;
+let currentElevation = null;
+let startTime = null;
+let timerInterval = null;
+let sampleCount = 0;
+let records = []; // { time, altitude, altLabel, heading, elevation, windSpeed, dx, dy }
+
+// Cumulative position for wind chart
+let cumulX = 0, cumulY = 0;
+let positions = [{x: 0, y: 0}]; // starting point = observer
+
+// ===== Permission & Sensor =====
+function requestPermission() {
+  if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+    // iOS 13+
+    DeviceOrientationEvent.requestPermission().then(state => {
+      if (state === 'granted') {
+        initSensors();
+      } else {
+        fallbackManual('センサー許可が拒否されました');
+      }
+    }).catch(() => fallbackManual('センサー許可エラー'));
+  } else if ('DeviceOrientationEvent' in window) {
+    // Android / other
+    initSensors();
+  } else {
+    fallbackManual('このデバイスではセンサーが利用できません');
+  }
+  document.getElementById('permOverlay').classList.add('hidden');
+}
+
+function skipPermission() {
+  document.getElementById('permOverlay').classList.add('hidden');
+  fallbackManual('手入力モード');
+}
+
+function fallbackManual(msg) {
+  manualMode = true;
+  document.getElementById('manualInput').classList.remove('hidden');
+  setStatus(msg, 'warn');
+}
+
+function initSensors() {
+  window.addEventListener('deviceorientation', handleOrientation, true);
+  // Also try absolute orientation
+  window.addEventListener('deviceorientationabsolute', handleOrientation, true);
+  sensorAvailable = true;
+  setStatus('センサー接続OK', 'ok');
+
+  // Check after a moment if we're getting data
+  setTimeout(() => {
+    if (currentHeading === null) {
+      fallbackManual('センサーデータを取得できません - 手入力に切替');
+    }
+  }, 3000);
+}
+
+function handleOrientation(e) {
+  let heading = null;
+
+  if (e.webkitCompassHeading !== undefined) {
+    // iOS: webkitCompassHeading is degrees from north
+    heading = e.webkitCompassHeading;
+  } else if (e.alpha !== null) {
+    // Android: alpha is 0-360, but relative. If absolute event, it's compass heading
+    if (e.absolute) {
+      heading = (360 - e.alpha) % 360;
+    } else {
+      heading = (360 - e.alpha) % 360;
+    }
+  }
+
+  // Elevation: beta is tilt front-back (-180 to 180)
+  // When phone top points up at sky: beta ~ 0-90 range
+  // When phone is vertical (top pointing up): beta ~ 90
+  // When phone is tilted back pointing at sky: beta < 90
+  // Elevation angle = beta when holding phone with top toward balloon
+  let elevation = null;
+  if (e.beta !== null) {
+    // beta: 0 = flat, 90 = vertical, 
+    // When top points at balloon in sky, elevation ≈ 90 - |beta| if gamma ~ 0
+    // Actually: if holding phone portrait and tilting back,
+    // beta goes from 90 (vertical) to 0 (flat/horizontal pointing up)
+    // Elevation = 90 - beta when phone is tilted back from vertical
+    elevation = Math.max(0, Math.min(90, 90 - Math.abs(e.beta)));
+    
+    // More accurate: if phone top is tilted toward sky
+    // beta near 0 = pointing straight up = 90° elevation
+    // beta near 90 = vertical = 0° elevation
+    if (e.beta >= 0 && e.beta <= 90) {
+      elevation = 90 - e.beta;
+    } else if (e.beta > 90) {
+      elevation = e.beta - 90;
+    } else {
+      elevation = Math.min(90, 90 + e.beta);
+    }
+  }
+
+  if (heading !== null) {
+    currentHeading = Math.round(heading * 10) / 10;
+    document.getElementById('headingVal').textContent = currentHeading.toFixed(1);
+    if (!sensorAvailable) {
+      sensorAvailable = true;
+      setStatus('センサー接続OK', 'ok');
+    }
+  }
+  if (elevation !== null) {
+    currentElevation = Math.round(elevation * 10) / 10;
+    document.getElementById('elevVal').textContent = currentElevation.toFixed(1);
+  }
+}
+
+// ===== Recording =====
+function toggleRecording() {
+  if (!isRecording) {
+    startRecording();
+  } else {
+    capturePoint();
+  }
+}
+
+function startRecording() {
+  const ascentRate = parseFloat(document.getElementById('ascentRate').value) || 200;
+  const intervalSec = parseInt(document.getElementById('interval').value) || 30;
+
+  if (!document.getElementById('obsTime').value) {
+    const now = new Date();
+    document.getElementById('obsTime').value =
+      now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+  }
+
+  isRecording = true;
+  startTime = Date.now();
+  sampleCount = 0;
+
+  document.getElementById('btnRecord').textContent = '📌 記録';
+  document.getElementById('btnRecord').classList.add('recording');
+  document.getElementById('btnStop').classList.remove('hidden');
+
+  setStatus('観測中 — バルーンにスマホ上端を向けてください', 'ok');
+  startTimer(intervalSec);
+}
+
+function startTimer(intervalSec) {
+  let remaining = intervalSec;
+  updateTimerDisplay(remaining, intervalSec);
+
+  timerInterval = setInterval(() => {
+    remaining--;
+    if (remaining <= 0) {
+      // Vibrate to notify
+      if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+      remaining = intervalSec;
+      // Flash the record button
+      const btn = document.getElementById('btnRecord');
+      btn.style.transform = 'scale(1.05)';
+      setTimeout(() => btn.style.transform = '', 200);
+    }
+    updateTimerDisplay(remaining, intervalSec);
+  }, 1000);
+}
+
+function updateTimerDisplay(remaining, total) {
+  const pct = ((total - remaining) / total) * 100;
+  document.getElementById('timerFill').style.width = pct + '%';
+  document.getElementById('timerText').textContent =
+    `次の記録まで ${remaining}s / #${sampleCount + 1}`;
+}
+
+function capturePoint() {
+  if (!isRecording) return;
+
+  const ascentRate = parseFloat(document.getElementById('ascentRate').value) || 200;
+  const intervalSec = parseInt(document.getElementById('interval').value) || 30;
+
+  let heading, elevation;
+
+  if (manualMode) {
+    heading = parseFloat(document.getElementById('manHeading').value) || 0;
+    elevation = parseFloat(document.getElementById('manElev').value) || 45;
+  } else {
+    if (currentHeading === null || currentElevation === null) {
+      setStatus('センサーデータがありません', 'err');
+      return;
+    }
+    heading = currentHeading;
+    elevation = currentElevation;
+  }
+
+  sampleCount++;
+  const elapsedMin = (sampleCount * intervalSec) / 60;
+  const altitude = ascentRate * elapsedMin;
+  const prevAltitude = sampleCount > 1 ? records[records.length - 1].altitude : 0;
+  const altDiff = altitude - prevAltitude;
+
+  // Altitude label
+  const altLow = Math.round(prevAltitude / 100) * 100;
+  const altHigh = Math.round(altitude / 100) * 100;
+  const altLabel = `${altLow}-${altHigh}m`;
+
+  // Calculate horizontal distance using elevation angle
+  // tan(elevation) = altitude / horizontal_distance_from_observer
+  // But we want the INCREMENTAL horizontal displacement
+  // Position of balloon: horizontal_dist = altitude / tan(elevation)
+  // Direction of balloon from observer: heading
+  const elevRad = elevation * Math.PI / 180;
+  const headRad = heading * Math.PI / 180;
+
+  // Total horizontal distance from observer
+  const horizDist = elevation > 1 ? altitude / Math.tan(elevRad) : 0;
+
+  // Balloon position in cartesian (N=+y, E=+x)
+  const balloonX = horizDist * Math.sin(headRad);
+  const balloonY = horizDist * Math.cos(headRad);
+
+  // Previous balloon position
+  const prevX = positions.length > 0 ? positions[positions.length - 1].x : 0;
+  const prevY = positions.length > 0 ? positions[positions.length - 1].y : 0;
+
+  // Displacement this interval
+  const dx = balloonX - prevX;
+  const dy = balloonY - prevY;
+
+  positions.push({x: balloonX, y: balloonY});
+
+  // Wind speed: displacement / time
+  const distM = Math.sqrt(dx * dx + dy * dy);
+  const windSpeedMs = distM / intervalSec;
+  const windSpeedKt = windSpeedMs / 0.5144; // 1 kt = 0.5144 m/s
+
+  // Wind direction (where wind comes FROM - meteorological convention)
+  // Balloon moves downwind, so wind comes from opposite direction
+  let windDir = Math.atan2(dx, dy) * 180 / Math.PI;
+  // The balloon drifts in the wind direction, but heading already points to balloon
+  // So the "wind from" direction is heading (approximately)
+
+  records.push({
+    time: sampleCount,
+    altitude,
+    altLabel,
+    heading: Math.round(heading * 10) / 10,
+    elevation: Math.round(elevation * 10) / 10,
+    windSpeed: Math.round(windSpeedKt * 10) / 10,
+    windSpeedMs: Math.round(windSpeedMs * 10) / 10,
+    dx, dy,
+    balloonX, balloonY
+  });
+
+  // Update altitude display
+  document.getElementById('altVal').textContent = Math.round(altitude);
+
+  updateTable();
+  drawChart();
+
+  // Feedback
+  if (navigator.vibrate) navigator.vibrate(50);
+  setStatus(`#${sampleCount} 記録完了 — ${altLabel} / ${heading.toFixed(1)}°`, 'ok');
+
+  // Reset timer
+  clearInterval(timerInterval);
+  startTimer(intervalSec);
+}
+
+function manualCapture() {
+  if (!isRecording) {
+    startRecording();
+  }
+  capturePoint();
+}
+
+function stopRecording() {
+  isRecording = false;
+  clearInterval(timerInterval);
+
+  document.getElementById('btnRecord').textContent = '▶ 観測開始';
+  document.getElementById('btnRecord').classList.remove('recording');
+  document.getElementById('btnStop').classList.add('hidden');
+  document.getElementById('timerFill').style.width = '0%';
+  document.getElementById('timerText').textContent = `観測完了 — ${sampleCount}点記録`;
+  setStatus(`観測完了 — ${sampleCount}点記録`, 'info');
+}
+
+function resetData() {
+  if (records.length > 0 && !confirm('データをリセットしますか？')) return;
+  records = [];
+  positions = [{x: 0, y: 0}];
+  sampleCount = 0;
+  cumulX = 0;
+  cumulY = 0;
+  stopRecording();
+  updateTable();
+  drawChart();
+  document.getElementById('altVal').textContent = '---';
+  setStatus('リセット完了', 'info');
+}
+
+function deleteRecord(idx) {
+  records.splice(idx, 1);
+  // Rebuild positions
+  positions = [{x: 0, y: 0}];
+  records.forEach(r => {
+    positions.push({x: r.balloonX, y: r.balloonY});
+  });
+  updateTable();
+  drawChart();
+}
+
+// ===== UI Updates =====
+function setStatus(msg, type) {
+  const el = document.getElementById('status');
+  el.textContent = msg;
+  el.className = 'status ' + type;
+}
+
+function updateTable() {
+  const body = document.getElementById('dataBody');
+  body.innerHTML = '';
+  records.forEach((r, i) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${r.altLabel}</td>
+      <td>${r.heading}</td>
+      <td>${r.elevation}</td>
+      <td>${r.windSpeed}</td>
+      <td><button class="btn-del" onclick="deleteRecord(${i})">✕</button></td>
+    `;
+    body.appendChild(tr);
+  });
+}
+
+// ===== Wind Chart (Canvas) =====
+function drawChart() {
+  const canvas = document.getElementById('windChart');
+  const rect = canvas.parentElement.getBoundingClientRect();
+  const size = Math.floor(rect.width);
+  canvas.width = size * 2;  // retina
+  canvas.height = size * 2;
+  canvas.style.width = size + 'px';
+  canvas.style.height = size + 'px';
+
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width;
+  const h = canvas.height;
+  const cx = w / 2;
+  const cy = h / 2;
+  const maxR = w * 0.42;
+
+  ctx.clearRect(0, 0, w, h);
+
+  // Background
+  ctx.fillStyle = '#111827';
+  ctx.fillRect(0, 0, w, h);
+
+  // Find max distance for scaling
+  let maxDist = 0;
+  positions.forEach(p => {
+    const d = Math.sqrt(p.x * p.x + p.y * p.y);
+    if (d > maxDist) maxDist = d;
+  });
+  if (maxDist < 100) maxDist = 1000;
+  const scale = maxR / (maxDist * 1.3);
+
+  // Grid rings
+  const ringCount = 4;
+  const ringStep = maxDist * 1.3 / ringCount;
+  const niceStep = niceRound(ringStep);
+
+  for (let i = 1; i <= ringCount; i++) {
+    const r = (niceStep * i) * scale;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(42, 53, 80, 0.6)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+
+  // Cross lines (N-S, E-W, NE-SW, NW-SE)
+  ctx.strokeStyle = 'rgba(42, 53, 80, 0.4)';
+  ctx.lineWidth = 1;
+  const angles = [0, 45, 90, 135];
+  angles.forEach(a => {
+    const rad = a * Math.PI / 180;
+    ctx.beginPath();
+    ctx.moveTo(cx - maxR * Math.sin(rad), cy - maxR * Math.cos(rad));
+    ctx.lineTo(cx + maxR * Math.sin(rad), cy + maxR * Math.cos(rad));
+    ctx.stroke();
+  });
+
+  // Cardinal labels
+  ctx.fillStyle = '#8892a8';
+  ctx.font = `bold ${Math.round(w * 0.035)}px JetBrains Mono, monospace`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  const labelOffset = maxR + w * 0.04;
+  ctx.fillText('N', cx, cy - labelOffset);
+  ctx.fillText('S', cx, cy + labelOffset);
+  ctx.fillText('E', cx + labelOffset, cy);
+  ctx.fillText('W', cx - labelOffset, cy);
+
+  // Plot track (N=up=+Y in chart but Y axis is inverted in canvas)
+  if (positions.length > 1) {
+    // Draw line
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    for (let i = 1; i < positions.length; i++) {
+      const sx = cx + positions[i].x * scale;
+      const sy = cy - positions[i].y * scale; // N is up, so invert Y
+      ctx.lineTo(sx, sy);
+    }
+    ctx.strokeStyle = var_accent();
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+
+    // Draw dots
+    for (let i = 0; i < positions.length; i++) {
+      const sx = cx + positions[i].x * scale;
+      const sy = cy - positions[i].y * scale;
+      ctx.beginPath();
+      ctx.arc(sx, sy, i === 0 ? 5 : 4, 0, Math.PI * 2);
+      ctx.fillStyle = i === 0 ? '#34d399' : '#38bdf8';
+      ctx.fill();
+      ctx.strokeStyle = '#0a0e1a';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    }
+  } else {
+    // Just center dot
+    ctx.beginPath();
+    ctx.arc(cx, cy, 5, 0, Math.PI * 2);
+    ctx.fillStyle = '#34d399';
+    ctx.fill();
+  }
+
+  // Scale label
+  const scaleM = Math.round(niceStep);
+  document.getElementById('chartScale').textContent = `Scale: ${scaleM}m / ring`;
+  document.getElementById('chartTime').textContent =
+    document.getElementById('obsTime').value ? `time: ${document.getElementById('obsTime').value}` : '';
+}
+
+function var_accent() { return '#38bdf8'; }
+
+function niceRound(v) {
+  if (v <= 0) return 100;
+  const mag = Math.pow(10, Math.floor(Math.log10(v)));
+  const norm = v / mag;
+  if (norm <= 1) return mag;
+  if (norm <= 2) return 2 * mag;
+  if (norm <= 5) return 5 * mag;
+  return 10 * mag;
+}
+
+// ===== Export =====
+function exportCSV() {
+  if (records.length === 0) { alert('データがありません'); return; }
+
+  const obsTime = document.getElementById('obsTime').value || '--:--';
+  let csv = 'Pi-Bal Data\n';
+  csv += `time:,${obsTime}\n`;
+  csv += `Ascent Rate:,${document.getElementById('ascentRate').value},m/min\n`;
+  csv += '\n';
+  csv += 'Altitude,Heading(deg),Elevation(deg),WindSpeed(kt),WindSpeed(m/s)\n';
+  records.forEach(r => {
+    csv += `${r.altLabel},${r.heading},${r.elevation},${r.windSpeed},${r.windSpeedMs}\n`;
+  });
+
+  const blob = new Blob([csv], {type: 'text/csv'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `pibal_${obsTime.replace(':','')}_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function captureChart() {
+  const canvas = document.getElementById('windChart');
+  const url = canvas.toDataURL('image/png');
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `windchart_${new Date().toISOString().slice(0,10)}.png`;
+  a.click();
+}
+
+// ===== Init =====
+window.addEventListener('DOMContentLoaded', () => {
+  drawChart();
+
+  // Set current time
+  const now = new Date();
+  document.getElementById('obsTime').value =
+    now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+});
+</script>
+</body>
+</html>
