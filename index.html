@@ -638,13 +638,10 @@ function handleOrientation(e) {
 function toggleRecording() {
   if (!isRecording) {
     startRecording();
-  } else {
-    capturePoint();
   }
 }
 
 function startRecording() {
-  const ascentRate = parseFloat(document.getElementById('ascentRate').value) || 200;
   const intervalSec = parseInt(document.getElementById('interval').value) || 30;
 
   if (!document.getElementById('obsTime').value) {
@@ -657,30 +654,30 @@ function startRecording() {
   startTime = Date.now();
   sampleCount = 0;
 
-  document.getElementById('btnRecord').textContent = '📌 記録';
+  document.getElementById('btnRecord').textContent = '⏺ 自動記録中';
   document.getElementById('btnRecord').classList.add('recording');
+  document.getElementById('btnRecord').disabled = true;
   document.getElementById('btnStop').classList.remove('hidden');
 
-  setStatus('観測中 — バルーンにスマホ上端を向けてください', 'ok');
-  startTimer(intervalSec);
+  setStatus('自動記録中 — バルーンにスマホ上端を向け続けてください', 'ok');
+  startAutoCapture(intervalSec);
 }
 
-function startTimer(intervalSec) {
+function startAutoCapture(intervalSec) {
   let remaining = intervalSec;
   updateTimerDisplay(remaining, intervalSec);
 
   timerInterval = setInterval(() => {
     remaining--;
-    if (remaining <= 0) {
-      // Vibrate to notify
-      if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
-      remaining = intervalSec;
-      // Flash the record button
-      const btn = document.getElementById('btnRecord');
-      btn.style.transform = 'scale(1.05)';
-      setTimeout(() => btn.style.transform = '', 200);
-    }
     updateTimerDisplay(remaining, intervalSec);
+
+    if (remaining <= 0) {
+      // Auto capture!
+      capturePoint();
+      // Vibrate to notify capture
+      if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+      remaining = intervalSec;
+    }
   }, 1000);
 }
 
@@ -777,12 +774,7 @@ function capturePoint() {
   drawChart();
 
   // Feedback
-  if (navigator.vibrate) navigator.vibrate(50);
-  setStatus(`#${sampleCount} 記録完了 — ${altLabel} / ${heading.toFixed(1)}°`, 'ok');
-
-  // Reset timer
-  clearInterval(timerInterval);
-  startTimer(intervalSec);
+  setStatus(`#${sampleCount} 自動記録 — ${altLabel} / ${heading.toFixed(1)}°`, 'ok');
 }
 
 function manualCapture() {
@@ -798,6 +790,7 @@ function stopRecording() {
 
   document.getElementById('btnRecord').textContent = '▶ 観測開始';
   document.getElementById('btnRecord').classList.remove('recording');
+  document.getElementById('btnRecord').disabled = false;
   document.getElementById('btnStop').classList.add('hidden');
   document.getElementById('timerFill').style.width = '0%';
   document.getElementById('timerText').textContent = `観測完了 — ${sampleCount}点記録`;
