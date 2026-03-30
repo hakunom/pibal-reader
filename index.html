@@ -594,30 +594,12 @@ function handleOrientation(e) {
     }
   }
 
-  // Elevation: beta is tilt front-back (-180 to 180)
-  // When phone top points up at sky: beta ~ 0-90 range
-  // When phone is vertical (top pointing up): beta ~ 90
-  // When phone is tilted back pointing at sky: beta < 90
-  // Elevation angle = beta when holding phone with top toward balloon
+  // Elevation: beta is tilt front-back
+  // beta=0° (flat on table, top edge horizontal) → elevation 0°
+  // beta=90° (upright, top edge pointing up) → elevation 90°
   let elevation = null;
   if (e.beta !== null) {
-    // beta: 0 = flat, 90 = vertical, 
-    // When top points at balloon in sky, elevation ≈ 90 - |beta| if gamma ~ 0
-    // Actually: if holding phone portrait and tilting back,
-    // beta goes from 90 (vertical) to 0 (flat/horizontal pointing up)
-    // Elevation = 90 - beta when phone is tilted back from vertical
-    elevation = Math.max(0, Math.min(90, 90 - Math.abs(e.beta)));
-    
-    // More accurate: if phone top is tilted toward sky
-    // beta near 0 = pointing straight up = 90° elevation
-    // beta near 90 = vertical = 0° elevation
-    if (e.beta >= 0 && e.beta <= 90) {
-      elevation = 90 - e.beta;
-    } else if (e.beta > 90) {
-      elevation = e.beta - 90;
-    } else {
-      elevation = Math.min(90, 90 + e.beta);
-    }
+    elevation = Math.max(0, Math.min(90, e.beta));
   }
 
   if (heading !== null) {
